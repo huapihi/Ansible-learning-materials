@@ -1,0 +1,2 @@
+ansible1 server_role=webserver
+ansible2 server_role=database

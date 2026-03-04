@@ -1,0 +1,16 @@
+---
+- name: install httpd
+  ansible.builtin.dnf:
+    name: httpd
+    state: present
+
+- name: start and enable httpd
+  ansible.builtin.systemd:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: copy content to index.html
+  ansible.builtin.copy:
+    content: "Welcome to {{ app_environment }} - Version {{ app_version }}"
+    dest: /var/www/html/index.html

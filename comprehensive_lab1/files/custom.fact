@@ -1,0 +1,4 @@
+[app]
+name=enterprise_app
+version=2.0
+state=production

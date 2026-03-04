@@ -1,0 +1,16 @@
+---
+- name: install mariadb
+  ansible.builtin.dnf:
+    name: mariadb-server
+    state: present
+
+- name: start and enable mariadb
+  ansible.builtin.systemd:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: add content to enterprise.conf
+  ansible.builtin.copy:
+    content: "[mysqld]\nmax_connections={{ max_connections }}"
+    dest: /etc/my.cnf.d/enterprise.conf
