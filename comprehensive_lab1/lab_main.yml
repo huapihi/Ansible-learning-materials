@@ -7,23 +7,28 @@
       ansible.builtin.file:
         dest: /etc/ansible/facts.d
         state: directory
+# Always set permissions, owner and groups 
 
     - name: copy content from custom.fact to destination /etc/ansible/facts.d
       ansible.builtin.copy:
         src: files/custom.fact
         dest: /etc/ansible/facts.d/custom.fact
+# Always set permissions, owner and groups 
 
     - name: reload facts
       ansible.builtin.setup:
 
+# Print all your messages at once instead of separate tasks over and over
     - name: print custom fact name
       ansible.builtin.debug:
-        msg: "The custom fact name is {{ ansible_local['custom']['app']['name'] }}"
+        msg: 
+          - "The custom fact name is {{ ansible_local['custom']['app']['name'] }}"
+          - "Host {{ ansible_hostname }} is running app version {{ ansible_local['custom']['app']['version'] }} in {{ ansible_local['custom']['app']['state'] }} state"
 
-    - name: print version and state of the custom fact
-      ansible.builtin.debug:
-        msg: "Host {{ ansible_hostname }} is running app version {{ ansible_local['custom']['app']['version'] }} in {{ ansible_local['custom']['app']['state'] }} state"
+# Now this is a bit deep, but I want to show you a better example of how you can
+# use one task to do this.    
 
+    #### YOUR ORIGINAL TASKS
     - name: print message only on webserver
       ansible.builtin.debug:
         msg: "This is a webserver with {{ max_connections }} max connections"
@@ -34,20 +39,38 @@
         msg: "This is a database with {{ max_connections }} max connections"
       when: server_role == "database"
 
+    #### MY SINGLE TASK
+    # You have a common var name so let's use it.  We don't need a conditional
+    # for a specific type of server in this case
+    - name: print message 
+      ansible.builtin.debug:
+        msg: "This is a {{ server_role }} with {{ max_connections }} max connections"
+      when:
+        - server_role is defined
+    
+
+
+    # You don't need a loop for this.  You can use a list
+    # In a loop, you're running dnf 3 separate times
+    # with a list you're running it once
     - name: install packages on all hosts
       ansible.builtin.dnf:
-        name: "{{ item }}"
+        name: "{{ mypackages }}"
         state: present
-      loop:
-        - vim-enhanced
-        - curl
-        - wget
+      vars:
+        mypackages:
+          - vim-enhanced
+          - curl
+          - wget
 
     - name: print message if backup enabled is true
       ansible.builtin.debug:
         msg: "Back up enabled on {{ ansible_hostname }}"
       when: backup_enabled
 
+    # You can actually use the "stat" module for this.
+    # It may be too advanced, but you want to avoid using the
+    # command and shell modules as much as possible
     - name: check if custom.fact exists
       ansible.builtin.command:
         cmd: ls /etc/ansible/facts.d/custom.fact
@@ -55,6 +78,8 @@
       ignore_errors: true
       changed_when: fact_check.rc != 0
 
+    # If you use the stat module, your when condition changes, but you can 
+    # get the same results.
     - name: print custom.fact file exists
       ansible.builtin.debug:
         msg: "Custom fact file exists on {{ ansible_hostname }}"
