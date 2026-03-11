@@ -1,0 +1,20 @@
+---
+- name: installing web package
+  ansible.builtin.dnf:
+    name: "{{ web_package }}"
+    state: present
+
+- name: start and enable web service
+  ansible.builtin.systemd:
+    name: "{{ web_service }}"
+    state: started
+    enabled: true
+
+- name: deploy content to index.html
+  ansible.builtin.copy:
+    content: "{{ app_name }} v{{ app_version }} - {{ env }}"
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart webserver

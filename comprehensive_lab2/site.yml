@@ -1,0 +1,93 @@
+---
+- name: enterprise application deployment
+  hosts: all
+  become: true
+  tasks:
+    - name: create a facts.d directory
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+
+    - name: deploy custom.fact to all hosts
+      ansible.builtin.copy:
+        src: files/custom.fact
+        dest: /etc/ansible/facts.d/custom.fact
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: reload facts on all hosts
+      ansible.builtin.setup:
+
+    - name: print messages using ansible.builtin.debug
+      ansible.builtin.debug:
+        msg:
+          - "App name: {{ ansible_local['custom']['app']['name'] }}"
+          - "App version: {{ ansible_local['custom']['app']['version'] }}"
+          - "App state: {{ ansible_local['custom']['app']['state'] }}"
+          - "Host: {{ ansible_hostname }} is running {{ app_environment }} environment"
+
+    - name: install packages on all hosts
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - vim-enhanced
+          - curl
+          - wget
+
+    - name: print multiple messages using ansible.builtin.debug
+      ansible.builtin.debug:
+        msg:
+          - "This is a {{ server_role }} with {{ max_connections }} max connections"
+          - "Backup is enabled on {{ ansible_hostname }}"
+      when: 
+        - server_role is defined
+        - backup_enabled
+
+    - name: check if custom.fact exists
+      ansible.builtin.stat:
+        path: /etc/ansible/facts.d/custom.fact
+      register: fact_check
+
+    - name: print custom fact file exists
+      ansible.builtin.debug:
+        msg: "Custom fact file exists on {{ ansible_hostname }}"
+      when: fact_check.stat.exists
+
+    - name: add web_tasks
+      include_tasks: ./tasks/web_tasks.yml
+      when: server_role == "webserver"
+
+    - name: add db_tasks
+      include_tasks: ./tasks/db_tasks.yml
+      when: server_role == "database"
+
+    - name: flush handlers
+      meta: flush_handlers
+
+    - name: print complete message if hostname is webserver
+      ansible.builtin.debug:
+        msg: "Web deployment complete on {{ ansible_hostname }}"
+      when: server_role == "webserver"
+
+    - name: print complete message if hostname is database
+      ansible.builtin.debug:
+        msg: "Database deployment complete on {{ ansible_hostname }}"
+      when: server_role == "database"
+
+  handlers:
+    - name: restart webserver
+      ansible.builtin.systemd:
+        name: "{{ web_service }}"
+        state: restarted
+
+    - name: restart database
+      ansible.builtin.systemd:
+        name: "{{ db_service }}"
+        state: restarted
+...

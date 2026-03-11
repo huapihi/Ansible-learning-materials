@@ -1,0 +1,5 @@
+app_name: enterprise_app
+app_version: "1.0"
+backup_enabled: true
+web_package: httpd
+web_service: httpd

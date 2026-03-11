@@ -1,0 +1,16 @@
+---
+- name: creating /etc/app directory
+  ansible.builtin.file:
+    path: /etc/app
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+
+- name: create app.conf file
+  ansible.builtin.copy:
+    content: "log_level={{ log_level }}\ndebug={{ debug_mode }}\nmax_connections={{ max_connections }}"
+    dest: /etc/app/app.conf
+    owner: root
+    group: root
+    mode: '0640'

@@ -1,0 +1,154 @@
+# THIS IS SECTION 1 OF THE COMPREHENSIVE LAB
+---
+- name: multi-environment web deployment
+  hosts: all
+  become: true
+  force_handlers: true
+  vars_prompt:
+    - name: deploy_confirmation
+      prompt: "Are you sure you want to deploy?"
+      private: false
+  vars:
+    custom_message: "Deploying to {{ env }} environment"
+    deploy_version: "{{ app_version }}"
+  tasks:
+    - name: create a facts.d directory
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: copy content from custom.fact to /etc/ansible/facts.d
+      ansible.builtin.copy:
+        src: ./files/custom.fact
+        dest: /etc/ansible/facts.d/custom.fact
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: reload facts
+      ansible.builtin.setup:
+
+    - name: print a list of msg
+      ansible.builtin.debug:
+        msg:
+          - "App name: {{ ansible_local['custom']['app']['name'] }}"
+          - "App version: {{ ansible_local['custom']['app']['version'] }}"
+          - "App state: {{ ansible_local['custom']['app']['state'] }}"
+          - "Host: {{ ansible_hostname }} is running {{ env }} environment"
+
+# THIS IS SECTION 2 OF THE COMPREHENSIVE LAB
+    - name: installing multiple packages
+      ansible.builtin.dnf:
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - vim-enhanced
+          - curl
+          - wget
+
+    - name: print messages with when condition
+      ansible.builtin.debug:
+        msg:
+          - "This is a {{ env }} server with {{ max_connections }} max connections"
+          - "Backup is enabled on {{ ansible_hostname }}"
+      when:
+        - backup_enabled
+        - env is defined
+
+# THIS IS SECTION 3 OF THE COMPREHENSIVE LAB
+    - name: include web_tasks.yml
+      ansible.builtin.include_tasks:
+        file: tasks/web_tasks.yml
+
+    - name: include security_tasks.yml
+      ansible.builtin.include_tasks:
+        file: tasks/security_tasks.yml
+
+    - name: flush handlers
+      meta: flush_handlers
+
+    - name: print completion message
+      ansible.builtin.debug:
+        msg: "Deployment complete on {{ ansible_hostname }} - {{ env }} environment running version {{ app_version }}"
+
+# THIS IS SECTION 4 OF THE COMPREHENSIVE LAB
+    - block:
+        - name: run 85 using ansible.builtin.shell module
+          ansible.builtin.shell: echo "85"
+          register: disk_check
+          changed_when: false
+          failed_when: disk_check.stdout|int > 90
+
+        - name: create a deployment log
+          ansible.builtin.copy:
+            content: "Deployment started on {{ ansible_hostname }} at version {{ app_version }}"
+            dest: /tmp/deployment.log
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: run /bin/false with ansible.builtin.command module
+          ansible.builtin.command: /bin/false
+          when: ansible_hostname == "ansible2"
+
+      rescue:
+        - name: failed deployment message
+          ansible.builtin.debug:
+            msg: "Deployment failed on {{ ansible_hostname }}, running cleanup"
+
+        - name: remove deployment log file
+          ansible.builtin.file:
+            path: /tmp/deployment.log
+            state: absent
+
+      always:
+        - name: print task finished message
+          ansible.builtin.debug:
+            msg: "Deployment attempt finished on {{ ansible_hostname }}"
+
+# THIS IS SECTION 5 OF THE COMPREHENSIVE LAB
+    - name: check to see if app.conf exists
+      ansible.builtin.stat:
+        path: /etc/app/app.conf
+      register: conf_check
+
+    - name: display custom fail message
+      ansible.builtin.fail:
+        msg: "app.conf is missing on {{ ansible_hostname }}"
+      when: not conf_check.stat.exists
+      
+# THIS IS SECTION 6 OF THE COMPREHENSIVE LAB
+    - name: passing web_tasks using ansible.builtin.include_tasks module
+      ansible.builtin.include_tasks:
+        file: tasks/web_tasks.yml
+      when: ansible_hostname == "ansible3"
+
+    - name: print result message
+      ansible.builtin.debug:
+        msg: "{{ custom_message }} - version {{ deploy_version }}"
+      when: ansible_hostname == "ansible3"
+
+# THIS IS SECTION 7 OF THE COMPREHENSIVE LAB
+    - name: debugging password
+      ansible.builtin.debug:
+        msg:
+          - "DB password: {{ vault_db_password }}"
+          - "API key: {{ vault_api_key }}"
+      when: ansible_hostname == "ansible1"
+
+# THIS IS SECTION 8 OF THE COMPREHENSIVE LAB
+    - name: display fail message if not yes
+      ansible.builtin.fail:
+        msg: "Deployment cancelled by user!"
+      when: deploy_confirmation != "yes"
+
+  handlers:
+    - name: restart webserver
+      ansible.builtin.systemd:
+        name: "{{ web_service }}"
+        state: restarted
+...

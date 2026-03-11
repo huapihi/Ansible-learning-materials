@@ -1,0 +1,3 @@
+app_version: "2.5-rc"
+debug_mode: false
+log_level: warning
