@@ -1,0 +1,46 @@
+---
+- name: dictionaries and arrays
+  hosts: all
+  become: true
+  tasks:
+    - name: print message for owner, location and tier
+      ansible.builtin.debug:
+        msg:
+          - "Owner: {{ server_info['owner'] }}"
+          - "Location: {{ server_info['location'] }}"
+          - "Tier: {{ server_info['tier'] }}"
+    
+    - name: install web packages
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      when: "'web' in group_names"
+      loop: "{{ web_packages }}"
+
+    - name: install db packages
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      when: "'db' in group_names"
+      loop: "{{ db_packages }}"
+
+    - name: display vlan and subnet info
+      ansible.builtin.debug:
+        msg:
+          - "Network VLAN: {{ server_info['network']['vlan'] }}"
+          - "Subnet: {{ server_info['network']['subnet'] }}"
+
+    - name: using dict2items filter
+      ansible.builtin.debug:
+        msg: "{{ item.key }}: {{ item.value }}"
+      loop: "{{ server_info | dict2items }}"
+      when: ansible_hostname == "ansible1"
+
+    - name: using dict2items filter v2 with one level deeper
+      ansible.builtin.debug:
+        msg: "{{ item.value['vlan'] }}"
+      loop: "{{ server_info | dict2items }}"
+      when:
+        - ansible_hostname == 'ansible1'
+        - item.key == 'network'
+...
