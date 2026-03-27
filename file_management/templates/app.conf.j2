@@ -1,0 +1,17 @@
+{{ ansible_managed }}
+server_name={{ company_name }}
+admin={{ admin_email }}
+
+{% if 'web' in group_names %}
+server_type=webserver
+{% elif 'db' in group_names %}
+server_type=database
+{% else %}
+server_type=unknown
+{% endif %}
+
+{% if 'web' in group_names %}
+{% for package in web_packages %}
+package={{ package }}
+{% endfor %}
+{% endif %}

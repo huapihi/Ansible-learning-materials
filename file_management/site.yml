@@ -1,0 +1,63 @@
+---
+- name: managing files
+  hosts: all
+  become: true
+  tasks:
+    - name: ensure line admin={{ admin_email }} is in /etc/app.conf
+      ansible.builtin.lineinfile:
+        line: "admin={{ admin_email }}"
+        path: /etc/app.conf
+        owner: root
+        group: root
+        mode: '0644'
+        create: true
+
+    - name: ensure block content is in /etc/app.conf
+      ansible.builtin.blockinfile:
+        block: |
+          company={{ company_name }}
+          environment=production
+        path: /etc/app.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: copy content to /tmp/ansible.cfg
+      ansible.builtin.copy:
+        src: ansible.cfg
+        dest: /tmp/ansible.cfg
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: fetch /etc/app.conf from all managed nodes to ./fetched_files/
+      ansible.builtin.fetch:
+        src: /etc/app.conf
+        dest: ./fetched_files/
+        flat: false
+
+    - name: deploy template to all hosts
+      ansible.builtin.template:
+        src: templates/app.conf.j2
+        dest: /etc/app_template.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: install policycoreutils-python-utils to all managed nodes
+      ansible.builtin.dnf:
+        name: policycoreutils-python-utils
+        state: present
+
+    - name: set SELinux context on /etc/app_template.conf
+      community.general.sefcontext:
+        target: /etc/app_template.conf
+        setype: etc_t
+        state: present
+      notify: run restorecon
+
+  handlers:
+    - name: run restorecon
+      ansible.builtin.command:
+        cmd: restorecon -v /etc/app_template.conf
+...
