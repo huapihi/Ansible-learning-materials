@@ -1,0 +1,70 @@
+---
+- name: managing files comprehensive lab
+  hosts: all
+  become: true
+  tasks:
+    - name: ensuring ntp server exists in /etc/techcorp.conf
+      ansible.builtin.lineinfile:
+        line: ntp_server={{ ntp_server }}
+        path: /etc/techcorp.conf
+        create: true
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: add block context to /etc/techcorp.conf
+      ansible.builtin.blockinfile:
+        block: |
+          company={{ company_name }}
+          admin={{ admin_email }}
+        path: /etc/techcorp.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: deploy server.conf.j2 to /etc/server.conf
+      ansible.builtin.template:
+        src: templates/server.conf.j2
+        dest: /etc/server.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: deploy motd.j2 to /etc/motd
+      ansible.builtin.template:
+        src: templates/motd.j2
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: fetch configuration from all managed nodes
+      ansible.builtin.fetch:
+        src: /etc/techcorp.conf
+        dest: ./fetched_configs
+        flat: false
+
+    - name: install policycoreutils to all managed nodes
+      ansible.builtin.dnf:
+        name: policycoreutils-python-utils
+        state: present
+
+    - name: set SELinux context for /etc/server.conf
+      community.general.sefcontext:
+        target: /etc/server.conf
+        setype: etc_t
+        state: present
+      notify: run restorecon
+
+    - name: set SELinux context for /etc/motd
+      community.general.sefcontext:
+        target: /etc/motd
+        setype: etc_t
+        state: present
+      notify: run restorecon
+
+  handlers:
+    - name: run restorecon
+      ansible.builtin.command:
+        cmd: restorecon -v /etc/server.conf /etc/motd
+...

@@ -1,0 +1,7 @@
+http_port: 80
+max_clients: 150
+web_root: /var/www/html
+web_packages:
+  - httpd
+  - mod_ssl
+  - curl

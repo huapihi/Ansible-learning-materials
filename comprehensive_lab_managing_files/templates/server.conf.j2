@@ -1,0 +1,28 @@
+{{ ansible_managed }}
+company={{ company_name }}
+admin={{ admin_email }}
+ntp={{ ntp_server }}
+
+{% if 'web' in group_names %}
+server_type=web
+port={{ http_port }}
+max_clients={{ max_clients }}
+{% elif 'db' in group_names %}
+server_type=database
+port={{ db_port }}
+database={{ db_name }}
+{% else %}
+server_type=unknown
+{% endif %}
+
+{% if 'web' in group_names %}
+{% for package in web_packages %}
+webpackage={{ package }}
+{% endfor %}
+{% endif %}
+
+{% if 'db' in group_names %}
+{% for package in db_packages %}
+dbpackage={{ package }}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,9 @@
+{{ ansible_managed }}
+Welcome to {{ ansible_hostname }}
+Company: {{ company_name }}
+{% if 'web' in group_names %}
+Role: Web Server
+{% elif 'db' in group_names %}
+Role: Database Server
+{% endif %}
+Managed by: {{ admin_email }}
