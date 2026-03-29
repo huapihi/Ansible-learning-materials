@@ -1,0 +1,21 @@
+---
+# tasks file for roles/webserver
+- name: install web package
+  ansible.builtin.dnf:
+    name: "{{ web_package }}"
+    state: present
+
+- name: start and enable web service
+  ansible.builtin.systemd:
+    name: "{{ web_service }}"
+    state: started
+    enabled: true
+
+- name: deploy index.html.j2 to {{ web_root }}/index.html
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: "{{ web_root }}/index.html"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart webserver

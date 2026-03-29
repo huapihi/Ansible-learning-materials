@@ -1,0 +1,7 @@
+{{ ansible_managed }}
+<h1> Welcome to {{ company_name }} </h1>
+<p> Server: {{ ansible_hostname }} </p>
+<p> Admin: {{ admin_email }} </p>
+{% if 'web' in group_names %}
+<p> Port: {{ http_port }} </p>
+{% endif %}

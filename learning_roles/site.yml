@@ -1,0 +1,17 @@
+---
+- name: using roles
+  hosts: web
+  pre_tasks:
+    - name: print deployment message
+      ansible.builtin.debug:
+        msg: "Starting web server deployment on {{ ansible_hostname }}"
+
+  roles: 
+    - role: webserver
+      http_port: 8080
+
+  post_tasks:
+    - name: print deployment complete message
+      ansible.builtin.debug:
+        msg: "Web server deployment complete on {{ ansible_hostname }}"
+...
