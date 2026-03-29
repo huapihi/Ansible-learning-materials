@@ -1,0 +1,10 @@
+---
+# handlers file for roles/webserver
+- name: restart webserver
+  ansible.builtin.systemd:
+    name: "{{ web_service }}"
+    state: restarted
+
+- name: run restorecon
+  ansible.builtin.command:
+    cmd: "restorecon -v {{ web_root }}/index.html"

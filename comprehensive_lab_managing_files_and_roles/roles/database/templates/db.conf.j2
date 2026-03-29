@@ -1,0 +1,7 @@
+{{ ansible_managed }}
+[mysqld]
+port={{ db_port }}
+database={{ db_name }}
+{% for package in db_packages %}
+# package={{ package }}
+{% endfor %}

@@ -1,0 +1,21 @@
+---
+# tasks file for roles/database
+- name: install database packages
+  ansible.builtin.dnf:
+    name: "{{ db_package }}"
+    state: present
+
+- name: start and enable db services
+  ansible.builtin.systemd:
+    name: "{{ db_service }}"
+    state: started
+    enabled: true
+
+- name: deploy db.conf.j2 to /etc/my.cnf.d/securetech.conf
+  ansible.builtin.template:
+    src: db.conf.j2
+    dest: /etc/my.cnf.d/securetech.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart database

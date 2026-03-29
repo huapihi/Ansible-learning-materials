@@ -1,0 +1,6 @@
+---
+# handlers file for roles/database
+- name: restart database
+  ansible.builtin.systemd:
+    name: "{{ db_service }}"
+    state: restarted

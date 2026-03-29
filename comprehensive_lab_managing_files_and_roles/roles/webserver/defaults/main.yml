@@ -1,0 +1,6 @@
+---
+# defaults file for roles/webserver
+http_port: 80
+web_root: /var/www/html
+web_package: httpd
+web_service: httpd

@@ -1,0 +1,36 @@
+---
+# tasks file for roles/webserver
+- name: install web packages
+  ansible.builtin.dnf:
+    name: "{{ web_package }}"
+    state: present
+
+- name: start and enable web service
+  ansible.builtin.systemd:
+    name: "{{ web_service }}"
+    state: started
+    enabled: true
+
+- name: deploy web.conf.j2 to /etc/httpd/conf.d/web.conf
+  ansible.builtin.template:
+    src: web.conf.j2
+    dest: /etc/httpd/conf.d/web.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart webserver
+
+- name: "deploy index.html.j2 to {{ web_root }}/index.html"
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: "{{ web_root }}/index.html"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: "set SELinux context to {{ web_root }}/index.html"
+  community.general.sefcontext:
+    target: "{{ web_root }}/index.html"
+    setype: httpd_sys_content_t
+    state: present
+  notify: run restorecon

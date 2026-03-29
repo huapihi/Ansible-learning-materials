@@ -1,0 +1,6 @@
+http_port: 80
+web_root: /var/www/html
+web_packages:
+  - httpd
+  - mod_ssl
+  - curl

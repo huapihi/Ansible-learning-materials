@@ -1,0 +1,6 @@
+db_port: 3306
+db_name: securetech_db
+db_packages:
+  - mariadb-server
+  - python3-PyMySQL
+  - curl

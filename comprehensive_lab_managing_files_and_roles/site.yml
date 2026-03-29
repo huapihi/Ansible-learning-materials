@@ -1,0 +1,77 @@
+---
+- name: web server deployment
+  hosts: web
+  become: true
+  pre_tasks:
+    - name: install policycoreutils-python-utils to all web hosts
+      ansible.builtin.dnf:
+        name: policycoreutils-python-utils
+        state: present
+    - name: ensure admin email is in /etc/securetech.conf
+      ansible.builtin.lineinfile:
+        line: "admin={{ admin_email }}"
+        path: /etc/securetech.conf
+        create: true
+        owner: root
+        group: root
+        mode: '0644'
+    - name: insert block of text in /etc/securetech.conf
+      ansible.builtin.blockinfile:
+        block: |
+          company={{ company_name }}
+          http_port={{ http_port }}
+        path: /etc/securetech.conf
+  roles:
+    - role: webserver
+      http_port: 80
+  post_tasks:
+    - name: fetch /etc/securetech.conf to control server
+      ansible.builtin.fetch:
+        src: /etc/securetech.conf
+        dest: ./fetched_configs/
+        flat: false
+    - name: print web deployment complete on web hosts
+      ansible.builtin.debug:
+        msg: "Web deployment complete on {{ ansible_hostname }}"
+
+- name: database server deployment
+  hosts: db
+  become: true
+  pre_tasks:
+    - name: ensure admin email is in /etc/securetech.conf
+      ansible.builtin.lineinfile:
+        line: "admin={{ admin_email }}"
+        path: /etc/securetech.conf
+        create: true
+        owner: root
+        group: root
+        mode: '0644'
+    - name: insert block in /etc/securetech.conf
+      ansible.builtin.blockinfile:
+        block: |
+          company={{ company_name }}
+          db_port={{ db_port }}
+        path: /etc/securetech.conf
+  roles:
+    - role: database
+  post_tasks:
+    - name: fetch /etc/securetech.conf to control node
+      ansible.builtin.fetch:
+        src: /etc/securetech.conf
+        dest: ./fetched_configs/
+        flat: false
+    - name: display database deployment complete
+      ansible.builtin.debug:
+        msg: "Database deployment complete on {{ ansible_hostname }}"
+
+- name: ntp configuration
+  hosts: all
+  become: true
+  vars: 
+    timesync_ntp_servers:
+      - hostname: "{{ ntp_server }}"
+        pool: true
+        iburst: true
+  roles:
+    - role: rhel-system-roles.timesync
+...

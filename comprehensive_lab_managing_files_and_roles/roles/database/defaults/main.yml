@@ -1,0 +1,6 @@
+---
+# defaults file for roles/database
+db_package: mariadb-server
+db_service: mariadb
+db_port: 3306
+db_name: securetech_db
